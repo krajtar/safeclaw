@@ -9,9 +9,10 @@ SESSION_NAME=""
 VOLUME_MOUNT=""
 NO_OPEN=false
 QUERY=""
+GIT_CLONE_URL=""
 
 # Parse arguments
-while getopts "s:v:nq:" opt; do
+while getopts "s:v:nq:g:" opt; do
     case $opt in
         s)
             SESSION_NAME="$OPTARG"
@@ -25,8 +26,11 @@ while getopts "s:v:nq:" opt; do
         q)
             QUERY="$OPTARG"
             ;;
+        g)
+            GIT_CLONE_URL="$OPTARG"
+            ;;
         *)
-            echo "Usage: $0 [-s session_name] [-v /host/path:/container/path] [-n] [-q \"question\"]"
+            echo "Usage: $0 [-s session_name] [-v /host/path:/container/path] [-n] [-q \"question\"] [-g git_url]"
             exit 1
             ;;
     esac
@@ -181,12 +185,28 @@ if [ -f "$SECRETS_DIR/GH_TOKEN" ]; then
     '
 fi
 
+# Clone git repo if requested (expects owner/repo slug, uses gh for auth)
+WORKDIR=""
+if [ -n "$GIT_CLONE_URL" ]; then
+    REPO_NAME=$(basename "$GIT_CLONE_URL")
+    WORKDIR="/home/sclaw/$REPO_NAME"
+    echo "Cloning $GIT_CLONE_URL into $WORKDIR..."
+    docker exec "$CONTAINER_NAME" bash -c "gh repo clone $GIT_CLONE_URL $WORKDIR"
+    # Persist workdir in .env so ttyd-wrapper.sh can pick it up
+    docker exec "$CONTAINER_NAME" sh -c "echo 'export SAFECLAW_WORKDIR=$WORKDIR' >> /home/sclaw/.env"
+fi
+
 # Set title based on session name
 TITLE="SafeClaw - ${SESSION_NAME}"
 
 # Start ttyd with web terminal
-docker exec -d "$CONTAINER_NAME" \
-    ttyd -W -t titleFixed="$TITLE" -p 7681 /home/sclaw/ttyd-wrapper.sh
+if [ -n "$WORKDIR" ]; then
+    docker exec -d -e SAFECLAW_WORKDIR="$WORKDIR" "$CONTAINER_NAME" \
+        ttyd -W -t titleFixed="$TITLE" -p 7681 /home/sclaw/ttyd-wrapper.sh
+else
+    docker exec -d "$CONTAINER_NAME" \
+        ttyd -W -t titleFixed="$TITLE" -p 7681 /home/sclaw/ttyd-wrapper.sh
+fi
 
 echo ""
 echo "SafeClaw is running at: http://localhost:${PORT}"

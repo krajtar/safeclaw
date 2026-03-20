@@ -1,6 +1,11 @@
 # Load env vars from .env file (written by run.sh)
 [ -f /home/sclaw/.env ] && . /home/sclaw/.env
 
+# Auto-cd into cloned repo workdir if set
+if [ -n "$SAFECLAW_WORKDIR" ] && [ -d "$SAFECLAW_WORKDIR" ]; then
+    cd "$SAFECLAW_WORKDIR"
+fi
+
 # Claude Code aliases
 alias c='claude'
 alias cs='claude --dangerously-skip-permissions'

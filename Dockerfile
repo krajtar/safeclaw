@@ -1,10 +1,10 @@
 FROM ubuntu:noble
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG TZ=America/Los_Angeles
+ARG TZ=Europe/Berlin
 ARG NODE_VERSION=24
 ARG PLAYWRIGHT_MCP_VERSION=0.0.62
-ARG CLAUDE_CODE_VERSION=2.1.32
+ARG CLAUDE_CODE_VERSION=2.1.72
 ARG GEMINI_CLI_VERSION=0.26.0
 
 ENV LANG=C.UTF-8
@@ -122,6 +122,8 @@ RUN mkdir -p /tmp/patches && \
     curl -sL "https://api.github.com/repos/ykdojo/claude-code-tips/contents/system-prompt/${CLAUDE_CODE_VERSION}/patches" | \
     jq -r '.[].download_url' | xargs -I{} curl -sLO --output-dir patches {} && \
     chmod +x patch-native.sh && \
+    cp /home/sclaw/.local/share/claude/versions/${CLAUDE_CODE_VERSION} /home/sclaw/.local/share/claude/versions/${CLAUDE_CODE_VERSION}.backup && \
+    sed -i "s/'native-linux-x64': 'TODO'/'native-linux-x64': 'e7f4a984d643b0709c3e2270e97318a32ce069af9ddd6ca474fa7e39067ef0c1'/" patch-cli.js && \
     ./patch-native.sh /home/sclaw/.local/share/claude/versions/${CLAUDE_CODE_VERSION} && \
     rm -rf /tmp/patches /tmp/*.sh /tmp/*.js
 

@@ -27,7 +27,7 @@ function startDockerEvents() {
 }
 startDockerEvents();
 
-const PORT = 7680;
+const PORT = process.env.PORT || 7680;
 const TEMPLATE_PATH = path.join(__dirname, 'template.html');
 
 function getSessions() {

@@ -10,6 +10,11 @@ else
     tmux set -t main status off
     tmux set -t main mouse on
 
+    # cd into workdir if set (e.g. from git clone)
+    if [ -n "$SAFECLAW_WORKDIR" ]; then
+        tmux send-keys -t main "cd $SAFECLAW_WORKDIR" Enter
+    fi
+
     # Start claude (env vars are loaded via BASH_ENV -> .bashrc -> .env)
     tmux send-keys -t main 'claude --dangerously-skip-permissions' Enter
     exec tmux attach -t main
